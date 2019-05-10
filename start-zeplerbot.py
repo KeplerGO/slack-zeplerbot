@@ -8,10 +8,12 @@ import time
 import re
 from slackclient import SlackClient
 
+import requests
+import json
 import emoji
 
 
-# Instantiate Slack client
+# Instantiate Slack client as a global
 slack_client = SlackClient(os.environ.get('ZEPLER_TOKEN'))
 # Bot's user ID in Slack: value is assigned after the bot connects
 botid = None
@@ -20,6 +22,17 @@ botid = None
 BOTNAME = 'zepler'
 RTM_READ_DELAY = 1  # 1 second delay between reading from RTM
 MENTION_REGEX = "^<@(|[WU].+?)>(.*)"
+
+
+def post_message(channel, text, attachments=None):
+    """Posts a message on a Slack channel."""
+    print(f"#{channel}: {text}")
+    return slack_client.api_call(
+        "chat.postMessage",
+        channel=channel,
+        text=text,
+        attachments=attachments
+    )
 
 
 def parse_bot_commands(slack_events):
@@ -49,36 +62,39 @@ def parse_direct_mention(message_text):
 
 
 def handle_command(command, channel):
-    """Executes bot command if the command is known
-    """
-    # Default response is help text for the user
-    default_response = "Not sure what you mean. Try *help*."
-
-    # Finds and executes the given command, filling in response
-    response = "No."
-    # This is where you start to implement more commands!
-    if command.lower().startswith("help"):
-        response = "No."
-
+    """Executes bot commands."""
     if command.lower().startswith("give"):
-        response = give(command)
+        give(command, channel)
+    else:
+        post_message(channel=channel, text="No.")
 
-    # Sends the response back to the channel
-    slack_client.api_call(
-        "chat.postMessage",
-        channel=channel,
-        text=response or default_response
-    )
 
-def give(command):
+def give(command, channel):
+    """Give something to someone."""
+    attachments = None
     splt = command.split(" ")
     recipient = splt[1]
     reward = emoji.emojize(f":{splt[2]}:", use_aliases=True)
     if recipient.startswith("<@") and (emoji.emoji_count(reward) > 0):
-        return f"{recipient} you deserved a {reward}"
+        text = f"{recipient} you deserved a {reward}"
+        if splt[2] == "dog":
+            text = ""
+            attachments = [{"title": f"dog for {recipient}", "image_url": random_dog_url()}]
     else:
-        return "No."
+        text = "No."
+    post_message(channel=channel, text=text, attachments=attachments)
 
+
+def random_dog_url():
+    """Returns the random URL of an image of a good dog."""
+    api_url = "https://dog.ceo/api/breeds/image/random"
+    response = requests.get(api_url)
+    if response.status_code == 200:
+        js = json.loads(response.content.decode('utf-8'))
+        return js['message']
+    else:
+        # Failsafe Labrador
+        return "https://dcewboipbvgi2.cloudfront.net/cdn/farfuture/F3Jhqj1h8Lw_ZY8KFN4psInhN8vPekhOtFUYDskKWJs/mtime:1496942436/sites/default/files/styles/article_hero_image/public/Puppy_Dog_Labrador_Jerry.jpg"
 
 if __name__ == "__main__":
     if slack_client.rtm_connect(with_team_state=False):
