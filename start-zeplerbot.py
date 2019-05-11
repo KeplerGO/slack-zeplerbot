@@ -72,7 +72,7 @@ def handle_command(command, channel):
 def give(command, channel):
     """Give something to someone."""
     attachments = None
-    splt = command.split(" ")
+    splt = command.replace(" a ", " ").split(" ")
     recipient = splt[1]
     reward = emoji.emojize(f":{splt[2]}:", use_aliases=True)
     if recipient.startswith("<@") and (emoji.emoji_count(reward) > 0):
