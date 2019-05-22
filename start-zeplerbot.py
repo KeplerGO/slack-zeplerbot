@@ -8,6 +8,7 @@ import time
 import re
 from slackclient import SlackClient
 
+import random
 import requests
 import json
 import emoji
@@ -65,6 +66,8 @@ def handle_command(command, channel):
     """Executes bot commands."""
     if command.lower().startswith("give"):
         give(command, channel)
+    elif command.lower().startswith("where"):
+        where(command, channel)
     else:
         post_message(channel=channel, text="No.")
 
@@ -95,6 +98,29 @@ def random_dog_url():
     else:
         # Failsafe Labrador
         return "https://dcewboipbvgi2.cloudfront.net/cdn/farfuture/F3Jhqj1h8Lw_ZY8KFN4psInhN8vPekhOtFUYDskKWJs/mtime:1496942436/sites/default/files/styles/article_hero_image/public/Puppy_Dog_Labrador_Jerry.jpg"
+
+
+def where(command, channel):
+    """Give something to someone."""
+    restaurant = random_restaurant()
+    text = f"You will go to {restaurant}."
+    post_message(channel=channel, text=text)
+
+
+def random_restaurant():
+    """Returns the name of a random restaurant near Ames."""
+    headers = {"Authorization": "Bearer " + os.environ.get('YELP_TOKEN')}
+    restaurants = []
+    lat, lon = 37.4121902, -122.0585327
+    for offset in [0, 50]:  # Yelp will only give us 50 rows at a time.  Let's get 100.
+        api_url = f"https://api.yelp.com/v3/businesses/search?latitude={lat}&longitude={lon}&radius=5000&open_now=true&price=1,2&categories=restaurants&sort_by=rating&limit=50&offset={offset}"
+        response = requests.get(api_url, headers=headers)
+        js = json.loads(response.content.decode('utf-8'))
+        restaurants.extend(js['businesses'])
+    names = list(set(["{} ({:.1f}⭐)".format(r['name'], r['rating']) for r in restaurants]))
+    names.extend(['Mega Bites 😏', 'Space Bar 🚀'])
+    return random.choice(names)
+
 
 if __name__ == "__main__":
     if slack_client.rtm_connect(with_team_state=False):
