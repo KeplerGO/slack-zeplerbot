@@ -8,6 +8,7 @@ import time
 import re
 from slackclient import SlackClient
 
+import datetime
 import random
 import requests
 import json
@@ -18,6 +19,8 @@ import emoji
 slack_client = SlackClient(os.environ.get('ZEPLER_TOKEN'))
 # Bot's user ID in Slack: value is assigned after the bot connects
 botid = None
+# Last restaurant request
+last_restaurant_request = None
 
 # Constants
 BOTNAME = 'zepler'
@@ -102,9 +105,19 @@ def random_dog_url():
 
 def where(command, channel):
     """Give something to someone."""
-    restaurant = random_restaurant()
-    text = f"You will go to {restaurant}."
+    global last_restaurant_request
+    seconds = 999
+    if last_restaurant_request is not None:
+        delta = datetime.datetime.now() - last_restaurant_request
+        seconds = delta.seconds
+    # Don't allow a restaurant to be recommended again within 45 seconds.
+    if seconds < 45:
+        text = "I'VE ALREADY BEEN ASKED. 😠"
+    else:
+        restaurant = random_restaurant()
+        text = f"You will go to {restaurant}."
     post_message(channel=channel, text=text)
+    last_restaurant_request = datetime.datetime.now()
 
 
 def random_restaurant():
