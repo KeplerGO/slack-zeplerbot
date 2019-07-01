@@ -67,16 +67,19 @@ def parse_direct_mention(message_text):
 
 def handle_command(command, channel):
     """Executes bot commands."""
-    if command.lower().startswith("give"):
-        give(command, channel)
-    elif command.lower().startswith("where"):
+    cmd = command.lower()
+    if cmd.startswith("give") and "dog" in cmd:
+        give_dog(command, channel)
+    elif cmd.startswith("give") and "joke" in cmd:
+        give_joke(command, channel)
+    elif cmd.startswith("where"):
         where(command, channel)
     else:
         post_message(channel=channel, text="No.")
 
 
-def give(command, channel):
-    """Give something to someone."""
+def give_dog(command, channel):
+    """Give a dog to someone."""
     attachments = None
     splt = command.replace(" a ", " ").split(" ")
     recipient = splt[1]
@@ -89,6 +92,30 @@ def give(command, channel):
     else:
         text = "No."
     post_message(channel=channel, text=text, attachments=attachments)
+
+
+def give_joke(command, channel):
+    splt = command.replace(" a ", " ").split(" ")
+    recipient = splt[1]
+    if recipient.startswith("<@") and splt[2] == "joke":
+        joke = random_joke()
+        text = f"{recipient} {joke}"
+    else:
+        text = "No."
+    post_message(channel=channel, text=text)
+
+
+def random_joke():
+    """Returns a random dad joke."""
+    api_url = "https://icanhazdadjoke.com"
+    headers = {'Accept': 'application/json'}
+    response = requests.get(api_url, headers=headers)
+    if response.status_code == 200:
+        js = json.loads(response.content.decode('utf-8'))
+        return js['joke']
+    else:
+        # Failsafe Labrador
+        return "No."
 
 
 def random_dog_url():
