@@ -68,17 +68,17 @@ def parse_direct_mention(message_text):
 def handle_command(command, channel):
     """Executes bot commands."""
     cmd = command.lower()
-    if cmd.startswith("give") and "dog" in cmd:
-        give_dog(command, channel)
-    elif cmd.startswith("give") and "joke" in cmd:
+    if cmd.startswith("give") and "joke" in cmd:
         give_joke(command, channel)
+    elif cmd.startswith("give"):
+        give_gift(command, channel)
     elif cmd.startswith("where"):
         where(command, channel)
     else:
         post_message(channel=channel, text="No.")
 
 
-def give_dog(command, channel):
+def give_gift(command, channel):
     """Give a dog to someone."""
     attachments = None
     splt = command.replace(" a ", " ").split(" ")
