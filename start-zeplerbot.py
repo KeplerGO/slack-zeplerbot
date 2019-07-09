@@ -79,7 +79,7 @@ def handle_command(command, channel):
 
 
 def give_gift(command, channel):
-    """Give a dog to someone."""
+    """Gives a dog or emoji to someone."""
     attachments = None
     splt = command.replace(" a ", " ").split(" ")
     recipient = splt[1]
@@ -95,6 +95,7 @@ def give_gift(command, channel):
 
 
 def give_joke(command, channel):
+    """Gives a joke to someone."""
     splt = command.replace(" a ", " ").split(" ")
     recipient = splt[1]
     if recipient.startswith("<@") and splt[2] == "joke":
@@ -168,9 +169,13 @@ if __name__ == "__main__":
         # Read bot's user ID by calling Web API method `auth.test`
         botid = slack_client.api_call("auth.test")["user_id"]
         while True:
-            command, channel = parse_bot_commands(slack_client.rtm_read())
-            if command:
-                handle_command(command, channel)
-            time.sleep(RTM_READ_DELAY)
+            try:
+                command, channel = parse_bot_commands(slack_client.rtm_read())
+                if command:
+                    handle_command(command, channel)
+                time.sleep(RTM_READ_DELAY)
+            except Exception as exc:
+                exception_type = str(type(exc))
+                print(f"Exception encountered: {exception_type}: {exc}")
     else:
         print("Connection failed. Exception traceback printed above.")
